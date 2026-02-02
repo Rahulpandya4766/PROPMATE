@@ -58,7 +58,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Lead CRM Hub</h1>
-          <p className="text-slate-500 text-sm font-medium">Manage leads and target locations for acquisition.</p>
+          <p className="text-slate-500 text-sm font-medium">Manage leads and track acquisition sources.</p>
         </div>
         <button 
           onClick={handleAddNew}
@@ -107,7 +107,9 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{client.profession || 'Self Employed'}</p>
-                          <span className="px-2 py-0.5 bg-slate-100 text-[8px] font-black uppercase text-slate-500 rounded">{client.listingSource}</span>
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${client.listingSource === ListingSource.DIRECT ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                            {client.listingSource}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -191,7 +193,7 @@ const ClientDetailModal: React.FC<{ client: Client; onClose: () => void }> = ({ 
              <div className="flex items-center gap-2 mt-1">
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{client.leadStage} Lead</p>
                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${client.listingSource === ListingSource.DIRECT ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                 {client.listingSource}
+                 {client.listingSource} Source
                </span>
              </div>
            </div>
@@ -202,6 +204,32 @@ const ClientDetailModal: React.FC<{ client: Client; onClose: () => void }> = ({ 
       </div>
 
       <div className="flex-1 overflow-y-auto p-12 space-y-12 custom-scrollbar">
+        {client.listingSource === ListingSource.BROKER && (
+          <section className="animate-in slide-in-from-top-2">
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4">Broker Intelligence</h4>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="p-5 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm">
+                  <UserCheck size={20} />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Sourced Via Broker</p>
+                  <p className="text-sm font-black text-slate-900">{client.brokerName || 'Name Not Provided'}</p>
+                </div>
+              </div>
+              <div className="p-5 bg-indigo-50 border border-indigo-100 rounded-3xl flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm">
+                  <Phone size={20} />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Broker Contact</p>
+                  <p className="text-sm font-black text-slate-900">{client.brokerNumber || 'Number Not Provided'}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="animate-in slide-in-from-top-2">
           <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4 text-left">Geographic Preferences</h4>
           <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex items-center gap-8">
@@ -315,9 +343,42 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
         </div>
         
         <form onSubmit={handleSubmit} className="p-10 overflow-y-auto space-y-10 custom-scrollbar">
+          {/* Section: Source Selection - Added as requested */}
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Lead Sourcing</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                type="button"
+                onClick={() => setFormData({...formData, listingSource: ListingSource.DIRECT})}
+                className={`p-5 rounded-[1.5rem] border text-xs font-black uppercase tracking-widest transition-all ${formData.listingSource === ListingSource.DIRECT ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-white'}`}
+              >
+                Direct Lead
+              </button>
+              <button 
+                type="button"
+                onClick={() => setFormData({...formData, listingSource: ListingSource.BROKER})}
+                className={`p-5 rounded-[1.5rem] border text-xs font-black uppercase tracking-widest transition-all ${formData.listingSource === ListingSource.BROKER ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-white'}`}
+              >
+                Via Broker
+              </button>
+            </div>
+            {formData.listingSource === ListingSource.BROKER && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Broker Full Name</label>
+                  <input required value={formData.brokerName || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Partner broker name" onChange={e => setFormData({...formData, brokerName: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Broker Phone Number</label>
+                  <input required value={formData.brokerNumber || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="+91 00000 00000" onChange={e => setFormData({...formData, brokerNumber: e.target.value})} />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Section: Contact Information */}
           <div className="space-y-6">
-            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Contact Information</h4>
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Lead Identity</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Input label="Full Name" value={formData.name || ''} required onChange={v => setFormData({...formData, name: v})} />
               <Input label="Phone Number" value={formData.phone || ''} required onChange={v => setFormData({...formData, phone: v})} />
