@@ -18,8 +18,7 @@ export const MOCK_PROPERTIES: Property[] = [
     totalFloors: 20,
     buildingName: 'Sky Heights',
     facing: 'East',
-    ageOfBuilding: 5,
-    furnishing: FurnishingStatus.FULLY,
+    furnishingStatus: FurnishingStatus.FULLY,
     parking: true,
     liftAvailable: true,
     powerBackup: true,
@@ -29,7 +28,6 @@ export const MOCK_PROPERTIES: Property[] = [
     status: PropertyStatus.AVAILABLE,
     location: { address: 'Plot 45, Bandra West', area: 'Bandra', city: 'Mumbai' },
     photos: ['https://picsum.photos/seed/prop1/800/600'],
-    // Fix: Added listingSource and isFavorite
     listingSource: ListingSource.DIRECT,
     isFavorite: false,
     createdAt: '2023-10-01'
@@ -50,8 +48,7 @@ export const MOCK_PROPERTIES: Property[] = [
     totalFloors: 2,
     buildingName: 'Palm Groves',
     facing: 'Other',
-    ageOfBuilding: 2,
-    furnishing: FurnishingStatus.SEMI,
+    furnishingStatus: FurnishingStatus.SEMI,
     parking: true,
     liftAvailable: false,
     powerBackup: true,
@@ -61,7 +58,6 @@ export const MOCK_PROPERTIES: Property[] = [
     status: PropertyStatus.AVAILABLE,
     location: { address: 'Sector 5, Alibaug', area: 'Alibaug', city: 'Raigad' },
     photos: ['https://picsum.photos/seed/prop2/800/600'],
-    // Fix: Added listingSource, brokerName and isFavorite
     listingSource: ListingSource.BROKER,
     brokerName: 'Elite Realty',
     isFavorite: true,
@@ -83,15 +79,13 @@ export const MOCK_CLIENTS: Client[] = [
     preferredAreas: ['Bandra', 'Andheri'],
     preferredCity: 'Mumbai',
     bhkPreference: ['2BHK', '3BHK'],
-    furnishingPreference: [FurnishingStatus.FULLY, FurnishingStatus.SEMI],
+    furnishingStatus: FurnishingStatus.FULLY,
     budgetMin: 30000,
     budgetMax: 50000,
     moveInDate: '2023-12-15',
     leadStage: LeadStage.SITE_VISIT,
-    // Fix: Added missing listingSource
     listingSource: ListingSource.DIRECT,
     tags: ['High Priority', 'Family'],
-    // Fix: Added isFavorite
     isFavorite: true,
     createdAt: '2023-10-10'
   },
@@ -108,16 +102,14 @@ export const MOCK_CLIENTS: Client[] = [
     preferredAreas: ['Juhu', 'Alibaug'],
     preferredCity: 'Mumbai',
     bhkPreference: ['4BHK', '5BHK'],
-    furnishingPreference: [FurnishingStatus.SEMI, FurnishingStatus.UNFURNISHED],
+    furnishingStatus: FurnishingStatus.SEMI,
     budgetMin: 80000000,
     budgetMax: 150000000,
     moveInDate: '2024-02-01',
     leadStage: LeadStage.NEGOTIATION,
-    // Fix: Added missing listingSource
     listingSource: ListingSource.BROKER,
     brokerName: 'Wealth Partners',
     tags: ['Investor', 'Luxury'],
-    // Fix: Added isFavorite
     isFavorite: false,
     createdAt: '2023-09-01'
   }
