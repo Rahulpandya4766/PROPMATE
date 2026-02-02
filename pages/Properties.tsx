@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, MapPin, X, Home, Bed, Maximize2, Building, Layers, Compass, 
   Car, Power, Dog, Users as UsersIcon, ChevronRight, Star, Trash2, ShieldCheck, 
-  CheckCircle2, Info, Wind, Clock, UserCheck, Phone, Edit2, Map
+  CheckCircle2, Info, Wind, Clock, UserCheck, Phone, Edit2, Map, Filter
 } from 'lucide-react';
 import { Property, PropertyStatus, TransactionType, PropertyType, FurnishingStatus, ListingSource } from '../types';
 
@@ -21,6 +21,8 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
 
   useEffect(() => {
     if (triggerModal && triggerModal > 0) {
@@ -29,12 +31,17 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
     }
   }, [triggerModal]);
 
-  const filtered = properties.filter(p => 
-    p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.location.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.buildingName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = properties.filter(p => {
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.location.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.buildingName.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesMinPrice = minPrice === '' || p.price >= Number(minPrice);
+    const matchesMaxPrice = maxPrice === '' || p.price <= Number(maxPrice);
+    
+    return matchesSearch && matchesMinPrice && matchesMaxPrice;
+  });
 
   const handleEditClick = (e: React.MouseEvent, prop: Property) => {
     e.stopPropagation();
@@ -62,8 +69,8 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
+      <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
@@ -72,6 +79,28 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+        <div className="flex gap-4 w-full md:w-auto">
+          <div className="relative w-full md:w-40">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase">Min</span>
+            <input 
+              type="number" 
+              placeholder="Price" 
+              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black focus:bg-white focus:outline-none transition-all"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+            />
+          </div>
+          <div className="relative w-full md:w-40">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase">Max</span>
+            <input 
+              type="number" 
+              placeholder="Price" 
+              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black focus:bg-white focus:outline-none transition-all"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -206,9 +235,9 @@ const PropertyDetailModal: React.FC<{ property: Property; onClose: () => void }>
           <DetailBlock label="Carpet Area" value={`${property.carpetArea} sqft`} />
           <DetailBlock label="Facing" value={property.facing} />
           <DetailBlock label="Floor" value={`${property.floorNumber} / ${property.totalFloors}`} />
-          <DetailBlock label="Age" value={`${property.ageOfBuilding} Yrs`} />
-          <DetailBlock label="Furnishing" value={property.furnishing} />
+          <DetailBlock label="Furnishing" value={property.furnishingStatus} />
           <DetailBlock label="Status" value={property.status} />
+          <DetailBlock label="Type" value={property.type} />
         </section>
 
         <section>
@@ -267,8 +296,8 @@ const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) =
     title: '', description: '', price: 0, carpetArea: 0, builtUpArea: 0, bhk: '2BHK',
     location: { area: '', city: 'Mumbai', address: '' },
     transactionType: TransactionType.RENT, type: PropertyType.FLAT,
-    floorNumber: 0, totalFloors: 10, buildingName: '', facing: 'East', ageOfBuilding: 0,
-    furnishing: FurnishingStatus.SEMI, parking: true, liftAvailable: true, 
+    floorNumber: 0, totalFloors: 10, buildingName: '', facing: 'East',
+    furnishingStatus: FurnishingStatus.SEMI, parking: true, liftAvailable: true, 
     powerBackup: true, petsAllowed: false, bachelorsAllowed: true, 
     negotiable: true, availabilityDate: new Date().toISOString().split('T')[0],
     listingSource: ListingSource.DIRECT, brokerName: '', brokerNumber: ''
@@ -409,7 +438,7 @@ const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) =
                </div>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Floor No.</label>
                  <input type="number" value={formData.floorNumber || 0} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, floorNumber: Number(e.target.value)})} />
@@ -424,10 +453,20 @@ const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) =
                     <option value="East">East</option><option value="West">West</option><option value="North">North</option><option value="South">South</option>
                  </select>
                </div>
-               <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Building Age</label>
-                 <input type="number" value={formData.ageOfBuilding || 0} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Years" onChange={e => setFormData({...formData, ageOfBuilding: Number(e.target.value)})} />
-               </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Furnishing Status</label>
+                <select value={formData.furnishingStatus || FurnishingStatus.SEMI} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, furnishingStatus: e.target.value as any})}>
+                  {Object.values(FurnishingStatus).map(fs => <option key={fs} value={fs}>{fs}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Property Type</label>
+                <select value={formData.type || PropertyType.FLAT} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, type: e.target.value as any})}>
+                  {Object.values(PropertyType).map(pt => <option key={pt} value={pt}>{pt}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
