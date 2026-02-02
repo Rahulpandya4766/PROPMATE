@@ -90,6 +90,7 @@ export interface Property {
   };
   listingSource: ListingSource;
   brokerName?: string;
+  brokerNumber?: string;
   isFavorite: boolean;
   createdAt: string;
 }
@@ -113,6 +114,9 @@ export interface Client {
   budgetMax: number;
   moveInDate: string;
   leadStage: LeadStage;
+  listingSource: ListingSource;
+  brokerName?: string;
+  brokerNumber?: string;
   tags: string[];
   isFavorite: boolean;
   createdAt: string;
