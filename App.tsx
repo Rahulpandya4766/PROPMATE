@@ -79,6 +79,9 @@ const App: React.FC = () => {
   const deleteClient = (id: string) => setClients(clients.filter(c => c.id !== id));
   const deleteReminder = (id: string) => setReminders(reminders.filter(r => r.id !== id));
 
+  const updateProperty = (updated: Property) => setProperties(properties.map(p => p.id === updated.id ? updated : p));
+  const updateClient = (updated: Client) => setClients(clients.map(c => c.id === updated.id ? updated : c));
+
   const toggleFavoriteProperty = (id: string) => {
     setProperties(properties.map(p => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p));
   };
@@ -119,6 +122,7 @@ const App: React.FC = () => {
         return <PropertiesPage 
           properties={properties} 
           onAdd={addProperty} 
+          onUpdate={updateProperty}
           onDelete={deleteProperty}
           onToggleFavorite={toggleFavoriteProperty}
         />;
@@ -126,6 +130,7 @@ const App: React.FC = () => {
         return <ClientsPage 
           clients={clients} 
           onAdd={addClient} 
+          onUpdate={updateClient}
           onDelete={deleteClient}
           onToggleFavorite={toggleFavoriteClient}
           onAutoMatch={(c) => { setPreselectedClient(c); setActiveTab(NavigationTab.MATCHING); }} 
