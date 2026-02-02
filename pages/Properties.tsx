@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, MapPin, X, Home, Bed, Maximize2, Building, Layers, Compass, 
   Car, Power, Dog, Users as UsersIcon, ChevronRight, Star, Trash2, ShieldCheck, 
-  CheckCircle2, Info, Wind, Clock, UserCheck, Phone, Edit2
+  CheckCircle2, Info, Wind, Clock, UserCheck, Phone, Edit2, Map
 } from 'lucide-react';
 import { Property, PropertyStatus, TransactionType, PropertyType, FurnishingStatus, ListingSource } from '../types';
 
@@ -23,12 +23,16 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (triggerModal && triggerModal > 0) setShowFormModal(true);
+    if (triggerModal && triggerModal > 0) {
+      setEditingProperty(null);
+      setShowFormModal(true);
+    }
   }, [triggerModal]);
 
   const filtered = properties.filter(p => 
     p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     p.location.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.location.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.buildingName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -48,7 +52,7 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Listing Inventory</h1>
-          <p className="text-slate-500 text-sm font-medium">Your comprehensive property database.</p>
+          <p className="text-slate-500 text-sm font-medium">Your comprehensive property database with location mapping.</p>
         </div>
         <button 
           onClick={handleAddNew}
@@ -63,7 +67,7 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="Search by area, building, or title..." 
+            placeholder="Search by city, area, or building..." 
             className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black focus:bg-white focus:outline-none transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -106,7 +110,10 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
               </div>
               
               <div className="flex items-center gap-2 text-black text-sm font-black">
-                <MapPin size={16} className="text-indigo-600" /> {prop.location.area}, {prop.location.city}
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <MapPin size={16} />
+                </div>
+                <span className="truncate">{prop.location.area}, {prop.location.city}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -161,7 +168,7 @@ const PropertyDetailModal: React.FC<{ property: Property; onClose: () => void }>
         </div>
       </div>
       
-      <div className="w-full md:w-3/5 p-12 overflow-y-auto space-y-12 bg-white">
+      <div className="w-full md:w-3/5 p-12 overflow-y-auto space-y-12 bg-white custom-scrollbar">
         <section>
           <div className="flex justify-between items-center mb-4">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Source Details</h4>
@@ -205,6 +212,26 @@ const PropertyDetailModal: React.FC<{ property: Property; onClose: () => void }>
         </section>
 
         <section>
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Location Details</h4>
+          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+             <div className="grid grid-cols-2 gap-4 mb-6">
+               <div>
+                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">City</p>
+                 <p className="text-sm font-black text-black">{property.location.city}</p>
+               </div>
+               <div>
+                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Area</p>
+                 <p className="text-sm font-black text-black">{property.location.area}</p>
+               </div>
+             </div>
+             <div className="flex items-center gap-3 text-black font-black mb-4">
+                <MapPin className="text-indigo-600" /> Full Address
+             </div>
+             <p className="text-sm text-slate-600 font-medium pl-9 leading-relaxed">{property.location.address}</p>
+          </div>
+        </section>
+
+        <section>
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Amenities & Features</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <FeatureBadge label="Parking" active={property.parking} icon={<Car size={16}/>} />
@@ -213,16 +240,6 @@ const PropertyDetailModal: React.FC<{ property: Property; onClose: () => void }>
             <FeatureBadge label="Pets Allowed" active={property.petsAllowed} icon={<Dog size={16}/>} />
             <FeatureBadge label="Bachelors" active={property.bachelorsAllowed} icon={<UsersIcon size={16}/>} />
             <FeatureBadge label="Negotiable" active={property.negotiable} icon={<ShieldCheck size={16}/>} />
-          </div>
-        </section>
-
-        <section>
-          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Location Details</h4>
-          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
-             <div className="flex items-center gap-3 text-black font-black mb-4">
-                <MapPin className="text-indigo-600" /> {property.location.area}, {property.location.city}
-             </div>
-             <p className="text-sm text-slate-600 font-medium pl-9">{property.location.address}</p>
           </div>
         </section>
       </div>
@@ -314,7 +331,7 @@ const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) =
             )}
           </div>
 
-          {/* Section 1: Identity */}
+          {/* Section: Identity */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Basic Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -327,13 +344,46 @@ const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) =
                 <input required value={formData.buildingName || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="e.g. Sky Heights" onChange={e => setFormData({...formData, buildingName: e.target.value})} />
               </div>
             </div>
+          </div>
+
+          {/* Section: Location explicitly requested */}
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Location Intelligence</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">City</label>
+                <input 
+                  required 
+                  value={formData.location?.city || ''} 
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" 
+                  placeholder="e.g. Mumbai" 
+                  onChange={e => setFormData({...formData, location: { ...formData.location!, city: e.target.value }})} 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Area / Locality</label>
+                <input 
+                  required 
+                  value={formData.location?.area || ''} 
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" 
+                  placeholder="e.g. Bandra West" 
+                  onChange={e => setFormData({...formData, location: { ...formData.location!, area: e.target.value }})} 
+                />
+              </div>
+            </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Description</label>
-              <textarea required value={formData.description || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[100px]" placeholder="Highlight features, proximity, and condition..." onChange={e => setFormData({...formData, description: e.target.value})} />
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Detailed Address</label>
+              <textarea 
+                required 
+                value={formData.location?.address || ''} 
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[80px]" 
+                placeholder="Shop/Flat No, Building, Street, Landmark..." 
+                onChange={e => setFormData({...formData, location: { ...formData.location!, address: e.target.value }})} 
+              />
             </div>
           </div>
 
-          {/* Section 2: Specs */}
+          {/* Section: Specs */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Specifications & Pricing</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -381,6 +431,11 @@ const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) =
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Description</label>
+            <textarea required value={formData.description || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[100px]" placeholder="Highlight features, proximity, and condition..." onChange={e => setFormData({...formData, description: e.target.value})} />
+          </div>
+
           <button type="submit" className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs shadow-2xl hover:bg-indigo-700 transition-all">
             {initialData ? 'Update Record' : 'Submit Property to Cloud'}
           </button>
@@ -389,13 +444,3 @@ const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) =
     </div>
   );
 };
-
-const ToggleItem = ({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) => (
-  <button 
-    type="button"
-    onClick={onClick}
-    className={`p-4 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all text-center ${active ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-100'}`}
-  >
-    {label}
-  </button>
-);

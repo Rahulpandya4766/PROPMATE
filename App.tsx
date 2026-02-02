@@ -9,6 +9,7 @@ import { ReportsPage } from './pages/Reports';
 import { SettingsPage } from './pages/Settings';
 import { RemindersPage } from './pages/Reminders';
 import { LoginPage } from './pages/Login';
+import { SmartSearchModal } from './components/SmartSearchModal';
 import { MOCK_PROPERTIES, MOCK_CLIENTS } from './mockData';
 import { Property, Client, Reminder, ReminderStatus } from './types';
 
@@ -26,6 +27,8 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<NavigationTab>(NavigationTab.DASHBOARD);
+  const [modalTrigger, setModalTrigger] = useState<number>(0);
+  const [isSmartSearchOpen, setIsSmartSearchOpen] = useState(false);
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -33,7 +36,6 @@ const App: React.FC = () => {
   const [userPlan, setUserPlan] = useState<'Free' | 'Premium'>('Free');
   const [preselectedClient, setPreselectedClient] = useState<Client | null>(null);
 
-  // Keyed specifically to user to simulate Vercel DB multi-tenancy locally
   const getStorageKey = (base: string) => `propmate_${currentUserEmail?.replace(/[^a-zA-Z0-9]/g, '_')}_${base}`;
 
   useEffect(() => {
@@ -46,7 +48,6 @@ const App: React.FC = () => {
       setClients(savedClients ? JSON.parse(savedClients) : MOCK_CLIENTS.map(c => ({...c, isFavorite: false, tenantId: currentUserEmail})));
       setReminders(savedReminders ? JSON.parse(savedReminders) : []);
       
-      // Auto-premium for Piyush
       if (currentUserEmail === 'Piyushdidwania@gmail.com') {
         setUserPlan('Premium');
       }
@@ -104,6 +105,16 @@ const App: React.FC = () => {
     setReminders(reminders.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
+  const handleSelectSearchResult = (type: 'property' | 'client', id: string) => {
+    setIsSmartSearchOpen(false);
+    if (type === 'property') {
+      setActiveTab(NavigationTab.PROPERTIES);
+      // We could add logic to auto-open that property's modal if needed
+    } else {
+      setActiveTab(NavigationTab.CLIENTS);
+    }
+  };
+
   if (!isLoggedIn) {
     return <LoginPage onLogin={handleLogin} />;
   }
@@ -125,6 +136,7 @@ const App: React.FC = () => {
           onUpdate={updateProperty}
           onDelete={deleteProperty}
           onToggleFavorite={toggleFavoriteProperty}
+          triggerModal={modalTrigger}
         />;
       case NavigationTab.CLIENTS:
         return <ClientsPage 
@@ -134,6 +146,7 @@ const App: React.FC = () => {
           onDelete={deleteClient}
           onToggleFavorite={toggleFavoriteClient}
           onAutoMatch={(c) => { setPreselectedClient(c); setActiveTab(NavigationTab.MATCHING); }} 
+          triggerModal={modalTrigger}
         />;
       case NavigationTab.MATCHING:
         return <MatchingPage properties={properties} clients={clients} initialClient={preselectedClient} />;
@@ -150,6 +163,7 @@ const App: React.FC = () => {
           onToggle={toggleReminder} 
           onUpdate={updateReminder}
           onDelete={deleteReminder} 
+          triggerModal={modalTrigger}
         />;
       default:
         return <Dashboard properties={properties} clients={clients} reminders={reminders} onToggleReminder={toggleReminder} onNavigate={(tab: any) => setActiveTab(tab)} />;
@@ -162,16 +176,27 @@ const App: React.FC = () => {
       setActiveTab={(tab: any) => setActiveTab(tab)}
       userPlan={userPlan}
       onLogout={handleLogout}
-      onQuickViewProperties={() => setActiveTab(NavigationTab.PROPERTIES)}
-      onQuickViewClients={() => setActiveTab(NavigationTab.CLIENTS)}
-      onQuickOpenReports={() => setActiveTab(NavigationTab.REPORTS)}
-      onQuickOpenSettings={() => setActiveTab(NavigationTab.SETTINGS)}
+      onGoProperties={() => setActiveTab(NavigationTab.PROPERTIES)}
+      onGoClients={() => setActiveTab(NavigationTab.CLIENTS)}
+      onGoReminders={() => setActiveTab(NavigationTab.REMINDERS)}
       onGoHome={() => setActiveTab(NavigationTab.DASHBOARD)}
+      onGoReports={() => setActiveTab(NavigationTab.REPORTS)}
+      onGoSettings={() => setActiveTab(NavigationTab.SETTINGS)}
+      onOpenSmartSearch={() => setIsSmartSearchOpen(true)}
       reminders={reminders}
-      onToggleReminder={toggleReminder}
       userEmail={currentUserEmail || ''}
     >
       {renderContent()}
+      
+      {isSmartSearchOpen && (
+        <SmartSearchModal 
+          onClose={() => setIsSmartSearchOpen(false)}
+          properties={properties}
+          clients={clients}
+          onSelectProperty={(p) => handleSelectSearchResult('property', p.id)}
+          onSelectClient={(c) => handleSelectSearchResult('client', c.id)}
+        />
+      )}
     </Layout>
   );
 };

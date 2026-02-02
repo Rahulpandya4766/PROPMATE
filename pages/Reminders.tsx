@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, Calendar, Clock, Trash2, CheckCircle2, AlertCircle, 
   Search, X, User, Home, ChevronRight, Bell, CalendarDays, 
@@ -16,6 +16,7 @@ interface RemindersPageProps {
   onToggle: (id: string) => void;
   onUpdate: (id: string, updates: Partial<Reminder>) => void;
   onDelete: (id: string) => void;
+  triggerModal?: number;
 }
 
 export const RemindersPage: React.FC<RemindersPageProps> = ({ 
@@ -25,15 +26,19 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({
   onAdd, 
   onToggle, 
   onUpdate,
-  onDelete 
+  onDelete,
+  triggerModal
 }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (triggerModal && triggerModal > 0) setShowAddModal(true);
+  }, [triggerModal]);
+
   const sortedReminders = [...reminders].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 
-  // Simple Month Grid Logic for "Calendar View"
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -134,7 +139,7 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex flex-col gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                        {!rem.isCompleted && (
                          <>
                            <button onClick={() => setSelectedOutcome(rem.id)} className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
