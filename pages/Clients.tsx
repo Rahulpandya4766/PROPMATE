@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Plus, Search, MapPin, X, Star, Trash2, Building, TrendingUp, Phone, Mail, User, Briefcase, UsersIcon, Calendar, Info, ShieldCheck, UserCheck, Edit2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, MapPin, X, Star, Trash2, Building, TrendingUp, Phone, Mail, User, Briefcase, UsersIcon, Calendar, Info, ShieldCheck, UserCheck, Edit2, Map } from 'lucide-react';
 import { Client, LeadStage, TransactionType, FurnishingStatus, ListingSource } from '../types';
 
 interface ClientsPageProps {
@@ -10,6 +10,7 @@ interface ClientsPageProps {
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onAutoMatch: (client: Client) => void;
+  triggerModal?: number;
 }
 
 export const ClientsPage: React.FC<ClientsPageProps> = ({ 
@@ -18,16 +19,26 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
   onUpdate,
   onDelete, 
   onToggleFavorite,
-  onAutoMatch 
+  onAutoMatch,
+  triggerModal
 }) => {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    if (triggerModal && triggerModal > 0) {
+      setEditingClient(null);
+      setShowFormModal(true);
+    }
+  }, [triggerModal]);
+
   const filtered = clients.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.preferredCity.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.preferredAreas.some(a => a.toLowerCase().includes(searchQuery.toLowerCase())) ||
     c.phone.includes(searchQuery)
   );
 
@@ -47,7 +58,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Lead CRM Hub</h1>
-          <p className="text-slate-500 text-sm font-medium">Manage comprehensive client profiles.</p>
+          <p className="text-slate-500 text-sm font-medium">Manage leads and target locations for acquisition.</p>
         </div>
         <button 
           onClick={handleAddNew}
@@ -65,7 +76,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, email, or phone..." 
+              placeholder="Search by city, area, or name..." 
               className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black outline-none focus:bg-white transition-all"
             />
           </div>
@@ -76,7 +87,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Lead Profile</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Requirement</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Requirement & Location</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Stage</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
               </tr>
@@ -103,6 +114,9 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
                   </td>
                   <td className="px-10 py-8">
                     <div className="flex flex-col">
+                      <div className="flex items-center gap-1.5 text-indigo-600 font-black text-xs mb-1">
+                        <MapPin size={12} /> {client.preferredAreas[0] || 'Any'}, {client.preferredCity}
+                      </div>
                       <span className="text-sm font-black text-black">₹{client.budgetMax.toLocaleString()} Max</span>
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{client.bhkPreference.join(', ')}</span>
                     </div>
@@ -187,28 +201,27 @@ const ClientDetailModal: React.FC<{ client: Client; onClose: () => void }> = ({ 
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-12 space-y-12">
-        {client.listingSource === ListingSource.BROKER && (
-          <section className="animate-in slide-in-from-top-2">
-            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4">Referral Source</h4>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="p-6 bg-indigo-50/30 rounded-[2rem] border border-indigo-100 flex items-center gap-4">
-                <UserCheck className="text-indigo-600" />
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Broker Name</p>
-                  <p className="text-sm font-black text-black">{client.brokerName || 'Not Specified'}</p>
-                </div>
+      <div className="flex-1 overflow-y-auto p-12 space-y-12 custom-scrollbar">
+        <section className="animate-in slide-in-from-top-2">
+          <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4 text-left">Geographic Preferences</h4>
+          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex items-center gap-8">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-indigo-600">
+              <Map size={24} />
+            </div>
+            <div className="grid grid-cols-2 gap-10 flex-1">
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target City</p>
+                <p className="text-xl font-black text-black">{client.preferredCity}</p>
               </div>
-              <div className="p-6 bg-indigo-50/30 rounded-[2rem] border border-indigo-100 flex items-center gap-4">
-                <Phone className="text-indigo-600" />
-                <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Broker Contact</p>
-                  <p className="text-sm font-black text-black">{client.brokerNumber || 'Not Specified'}</p>
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Areas</p>
+                <div className="flex flex-wrap gap-2">
+                  {client.preferredAreas.map(a => <span key={a} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-black text-black">{a}</span>)}
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
           <div className="space-y-6">
@@ -220,7 +233,7 @@ const ClientDetailModal: React.FC<{ client: Client; onClose: () => void }> = ({ 
                 </div>
                 <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
                    <Mail size={18} className="text-indigo-600" />
-                   <span className="text-black font-black">{client.email || 'No email provided'}</span>
+                   <span className="text-black font-black truncate">{client.email || 'No email provided'}</span>
                 </div>
                 <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
                    <Briefcase size={18} className="text-indigo-600" />
@@ -254,21 +267,6 @@ const ClientDetailModal: React.FC<{ client: Client; onClose: () => void }> = ({ 
               <RequirementBlock label="Budget Max" value={`₹${client.budgetMax.toLocaleString()}`} />
               <RequirementBlock label="BHK Preference" value={client.bhkPreference.join('/')} />
               <RequirementBlock label="Move-in Date" value={new Date(client.moveInDate).toLocaleDateString()} />
-           </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Preferred Neighborhoods</p>
-                 <div className="flex flex-wrap gap-2">
-                    {client.preferredAreas.map(a => <span key={a} className="px-3 py-1 bg-white border border-slate-100 rounded-lg text-xs font-black text-black">{a}</span>)}
-                 </div>
-              </div>
-              <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Furnishing Preference</p>
-                 <div className="flex flex-wrap gap-2">
-                    {client.furnishingPreference.map(f => <span key={f} className="px-3 py-1 bg-white border border-slate-100 rounded-lg text-xs font-black text-black">{f}</span>)}
-                 </div>
-              </div>
            </div>
         </section>
       </div>
@@ -317,33 +315,7 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
         </div>
         
         <form onSubmit={handleSubmit} className="p-10 overflow-y-auto space-y-10 custom-scrollbar">
-          {/* Section: Source Selection */}
-          <div className="space-y-6">
-            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Lead Origin</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                type="button"
-                onClick={() => setFormData({...formData, listingSource: ListingSource.DIRECT})}
-                className={`p-5 rounded-[1.5rem] border text-xs font-black uppercase tracking-widest transition-all ${formData.listingSource === ListingSource.DIRECT ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-white'}`}
-              >
-                Direct Lead
-              </button>
-              <button 
-                type="button"
-                onClick={() => setFormData({...formData, listingSource: ListingSource.BROKER})}
-                className={`p-5 rounded-[1.5rem] border text-xs font-black uppercase tracking-widest transition-all ${formData.listingSource === ListingSource.BROKER ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-white'}`}
-              >
-                Via Broker
-              </button>
-            </div>
-            {formData.listingSource === ListingSource.BROKER && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2">
-                <Input label="Broker Full Name" value={formData.brokerName || ''} placeholder="Referral partner name" onChange={v => setFormData({...formData, brokerName: v})} />
-                <Input label="Broker Phone" value={formData.brokerNumber || ''} placeholder="+91 00000 00000" onChange={v => setFormData({...formData, brokerNumber: v})} />
-              </div>
-            )}
-          </div>
-
+          {/* Section: Contact Information */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Contact Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -353,6 +325,30 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
             </div>
           </div>
 
+          {/* Section: Location explicitly requested */}
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Geographic Targeting</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <Input 
+                label="Preferred City" 
+                value={formData.preferredCity || ''} 
+                placeholder="e.g. Mumbai" 
+                required 
+                onChange={v => setFormData({...formData, preferredCity: v})} 
+               />
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Preferred Areas (Comma Separated)</label>
+                 <input 
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" 
+                  placeholder="e.g. Bandra, Juhu, Andheri"
+                  value={formData.preferredAreas?.join(', ') || ''}
+                  onChange={e => setFormData({...formData, preferredAreas: e.target.value.split(',').map(a => a.trim())})}
+                 />
+               </div>
+            </div>
+          </div>
+
+          {/* Section: Requirements & Budget */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Requirements & Budget</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -371,19 +367,9 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
             </div>
           </div>
 
-          <div className="space-y-6">
-            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Profile Narrative</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <Input label="Profession" value={formData.profession || ''} placeholder="e.g. Software Architect" onChange={v => setFormData({...formData, profession: v})} />
-               <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Family Size</label>
-                 <input type="number" value={formData.familySize || 1} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, familySize: Number(e.target.value)})} />
-               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Requirement Description</label>
-              <textarea required value={formData.description || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[100px]" placeholder="Specific details about views, floors, or Vastu..." onChange={e => setFormData({...formData, description: e.target.value})} />
-            </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Requirement Description</label>
+            <textarea required value={formData.description || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[100px]" placeholder="Specific details about views, floors, or Vastu..." onChange={e => setFormData({...formData, description: e.target.value})} />
           </div>
 
           <button type="submit" className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs shadow-2xl hover:bg-indigo-700 transition-all">
