@@ -26,6 +26,8 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [minBudget, setMinBudget] = useState<string>('');
+  const [maxBudget, setMaxBudget] = useState<string>('');
 
   useEffect(() => {
     if (triggerModal && triggerModal > 0) {
@@ -34,13 +36,18 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
     }
   }, [triggerModal]);
 
-  const filtered = clients.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.preferredCity.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.preferredAreas.some(a => a.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    c.phone.includes(searchQuery)
-  );
+  const filtered = clients.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.preferredCity.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.preferredAreas.some(a => a.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      c.phone.includes(searchQuery);
+    
+    const matchesMinBudget = minBudget === '' || c.budgetMax >= Number(minBudget);
+    const matchesMaxBudget = maxBudget === '' || c.budgetMin <= Number(maxBudget);
+    
+    return matchesSearch && matchesMinBudget && matchesMaxBudget;
+  });
 
   const handleEditClick = (e: React.MouseEvent, client: Client) => {
     e.stopPropagation();
@@ -69,8 +76,8 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
       </div>
 
       <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-slate-100">
-          <div className="relative max-w-md">
+        <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-center">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
@@ -79,6 +86,28 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
               placeholder="Search by city, area, or name..." 
               className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black outline-none focus:bg-white transition-all"
             />
+          </div>
+          <div className="flex gap-4 w-full md:w-auto">
+            <div className="relative w-full md:w-40">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase">Min</span>
+              <input 
+                type="number" 
+                placeholder="Budget" 
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black focus:bg-white focus:outline-none transition-all"
+                value={minBudget}
+                onChange={(e) => setMinBudget(e.target.value)}
+              />
+            </div>
+            <div className="relative w-full md:w-40">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase">Max</span>
+              <input 
+                type="number" 
+                placeholder="Budget" 
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black focus:bg-white focus:outline-none transition-all"
+                value={maxBudget}
+                onChange={(e) => setMaxBudget(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
@@ -292,9 +321,9 @@ const ClientDetailModal: React.FC<{ client: Client; onClose: () => void }> = ({ 
            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Property Requirements</h4>
            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <RequirementBlock label="Transaction" value={client.requirement} />
-              <RequirementBlock label="Budget Max" value={`₹${client.budgetMax.toLocaleString()}`} />
+              <RequirementBlock label="Budget Range" value={`₹${client.budgetMin.toLocaleString()} - ₹${client.budgetMax.toLocaleString()}`} />
               <RequirementBlock label="BHK Preference" value={client.bhkPreference.join('/')} />
-              <RequirementBlock label="Move-in Date" value={new Date(client.moveInDate).toLocaleDateString()} />
+              <RequirementBlock label="Furnishing" value={client.furnishingStatus} />
            </div>
         </section>
       </div>
@@ -314,7 +343,7 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
     name: '', phone: '', email: '', description: '', profession: '', 
     maritalStatus: 'Bachelor', familySize: 1, requirement: TransactionType.RENT,
     preferredAreas: [], preferredCity: 'Mumbai', bhkPreference: ['2BHK'],
-    furnishingPreference: [FurnishingStatus.SEMI], budgetMin: 0, budgetMax: 0,
+    furnishingStatus: FurnishingStatus.SEMI, budgetMin: 0, budgetMax: 0,
     moveInDate: new Date().toISOString().split('T')[0],
     listingSource: ListingSource.DIRECT, brokerName: '', brokerNumber: ''
   });
@@ -343,7 +372,7 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
         </div>
         
         <form onSubmit={handleSubmit} className="p-10 overflow-y-auto space-y-10 custom-scrollbar">
-          {/* Section: Source Selection - Added as requested */}
+          {/* Section: Source Selection */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Lead Sourcing</h4>
             <div className="grid grid-cols-2 gap-4">
@@ -386,7 +415,6 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
             </div>
           </div>
 
-          {/* Section: Location explicitly requested */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Geographic Targeting</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -409,7 +437,6 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
             </div>
           </div>
 
-          {/* Section: Requirements & Budget */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Requirements & Budget</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -422,8 +449,10 @@ const ClientFormModal: React.FC<{ onClose: () => void; onSave: (c: Client) => vo
                <Input label="Min Budget" value={String(formData.budgetMin || 0)} type="number" onChange={v => setFormData({...formData, budgetMin: Number(v)})} />
                <Input label="Max Budget" value={String(formData.budgetMax || 0)} type="number" onChange={v => setFormData({...formData, budgetMax: Number(v)})} />
                <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Move-in Date</label>
-                 <input type="date" value={formData.moveInDate || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, moveInDate: e.target.value})} />
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Furnishing</label>
+                 <select value={formData.furnishingStatus || FurnishingStatus.SEMI} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, furnishingStatus: e.target.value as any})}>
+                    {Object.values(FurnishingStatus).map(fs => <option key={fs} value={fs}>{fs}</option>)}
+                 </select>
                </div>
             </div>
           </div>
