@@ -15,6 +15,7 @@ interface LayoutProps {
   onLogout: () => void;
   onGoProperties?: () => void;
   onGoClients?: () => void;
+  onGoMatching?: () => void;
   onGoReminders?: () => void;
   onGoHome?: () => void;
   onGoReports?: () => void;
@@ -32,6 +33,7 @@ export const Layout: React.FC<LayoutProps> = ({
   onLogout,
   onGoProperties,
   onGoClients,
+  onGoMatching,
   onGoReminders,
   onGoHome,
   onGoReports,
@@ -149,14 +151,14 @@ export const Layout: React.FC<LayoutProps> = ({
           {children}
         </main>
 
-        {/* Mobile FAB Hub - Updated to Navigate + Smart Search */}
+        {/* Mobile FAB Hub - Removed Smart Search, Added Smart Matching */}
         <div ref={fabRef} className="lg:hidden fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
           {isFabOpen && (
             <div className="flex flex-col items-end gap-3 mb-2 animate-in slide-in-from-bottom-5 duration-300">
               <FabItem 
-                label="Smart Search" 
-                icon={<Sparkles size={20} />} 
-                onClick={() => handleFabAction(onOpenSmartSearch)} 
+                label="Smart Matching" 
+                icon={<Zap size={20} />} 
+                onClick={() => handleFabAction(onGoMatching)} 
                 color="bg-indigo-600 text-white shadow-indigo-200"
               />
               <div className="h-px w-8 bg-slate-200 my-1"></div>
