@@ -109,7 +109,6 @@ const App: React.FC = () => {
     setIsSmartSearchOpen(false);
     if (type === 'property') {
       setActiveTab(NavigationTab.PROPERTIES);
-      // We could add logic to auto-open that property's modal if needed
     } else {
       setActiveTab(NavigationTab.CLIENTS);
     }
@@ -178,6 +177,7 @@ const App: React.FC = () => {
       onLogout={handleLogout}
       onGoProperties={() => setActiveTab(NavigationTab.PROPERTIES)}
       onGoClients={() => setActiveTab(NavigationTab.CLIENTS)}
+      onGoMatching={() => setActiveTab(NavigationTab.MATCHING)}
       onGoReminders={() => setActiveTab(NavigationTab.REMINDERS)}
       onGoHome={() => setActiveTab(NavigationTab.DASHBOARD)}
       onGoReports={() => setActiveTab(NavigationTab.REPORTS)}
