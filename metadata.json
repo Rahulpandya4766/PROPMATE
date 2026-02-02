@@ -1,0 +1,9 @@
+{
+  "name": "PropMate SaaS",
+  "description": "A premium, multi-tenant property & client management portal for real-estate professionals with advanced matching, reports, and filtering.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
