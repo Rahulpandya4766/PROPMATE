@@ -27,7 +27,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userPlan, onUpgrade,
 
   const sections = [
     { id: 'profile', label: 'Profile & Business', icon: <Building size={20} /> },
-    { id: 'team', label: 'Team & Roles', icon: <Users size={20} /> },
     { id: 'matching', label: 'Matching Engine', icon: <Zap size={20} /> },
     { id: 'billing', label: 'Subscription & Billing', icon: <CreditCard size={20} /> },
     { id: 'account', label: 'Account & Session', icon: <LogOut size={20} /> },
