@@ -20,8 +20,8 @@ export enum PropertyStatus {
 }
 
 export enum FurnishingStatus {
-  FULLY = 'Fully',
-  SEMI = 'Semi',
+  FULLY = 'Fully Furnished',
+  SEMI = 'Semi-Furnished',
   UNFURNISHED = 'Unfurnished',
   ANY = 'Any'
 }
@@ -73,8 +73,7 @@ export interface Property {
   totalFloors: number;
   buildingName: string;
   facing: 'East' | 'West' | 'North' | 'South' | 'Other';
-  ageOfBuilding: number;
-  furnishing: FurnishingStatus;
+  furnishingStatus: FurnishingStatus;
   parking: boolean;
   liftAvailable: boolean;
   powerBackup: boolean;
@@ -109,7 +108,7 @@ export interface Client {
   preferredAreas: string[];
   preferredCity: string;
   bhkPreference: string[];
-  furnishingPreference: FurnishingStatus[];
+  furnishingStatus: FurnishingStatus;
   budgetMin: number;
   budgetMax: number;
   moveInDate: string;
@@ -133,9 +132,9 @@ export interface Reminder {
   propertyId?: string;
   isCompleted: boolean;
   notified: boolean;
+  rescheduleCount: number;
   clientPresent?: boolean;
   ownerPresent?: boolean;
-  rescheduleCount: number;
   createdAt: string;
 }
 
