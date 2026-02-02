@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, MapPin, X, Home, Bed, Maximize2, Building, Layers, Compass, 
   Car, Power, Dog, Users as UsersIcon, ChevronRight, Star, Trash2, ShieldCheck, 
-  CheckCircle2, Info, Wind, Clock
+  CheckCircle2, Info, Wind, Clock, UserCheck, Phone
 } from 'lucide-react';
 import { Property, PropertyStatus, TransactionType, PropertyType, FurnishingStatus, ListingSource } from '../types';
 
@@ -68,7 +68,7 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
                   {prop.transactionType}
                 </span>
                 <span className="px-4 py-2 bg-slate-900/90 backdrop-blur-md rounded-xl text-[9px] font-black text-white uppercase tracking-widest shadow-lg">
-                  {prop.bhk}
+                  {prop.listingSource}
                 </span>
               </div>
               <button 
@@ -135,6 +135,30 @@ const PropertyDetailModal: React.FC<{ property: Property; onClose: () => void }>
       
       <div className="w-full md:w-3/5 p-12 overflow-y-auto space-y-12 bg-white">
         <section>
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Source Details</h4>
+            <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${property.listingSource === ListingSource.DIRECT ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+              {property.listingSource} Listing
+            </span>
+          </div>
+          {property.listingSource === ListingSource.BROKER && (
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 flex items-center gap-3">
+                <UserCheck size={16} className="text-indigo-600" />
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Broker Name</p>
+                  <p className="text-sm font-black text-black">{property.brokerName || 'Not Provided'}</p>
+                </div>
+              </div>
+              <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 flex items-center gap-3">
+                <Phone size={16} className="text-indigo-600" />
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Broker Phone</p>
+                  <p className="text-sm font-black text-black">{property.brokerNumber || 'Not Provided'}</p>
+                </div>
+              </div>
+            </div>
+          )}
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Description</h4>
           <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 shadow-inner">
              <p className="text-black font-bold leading-relaxed text-sm">{property.description}</p>
@@ -201,7 +225,8 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
     floorNumber: 0, totalFloors: 10, buildingName: '', facing: 'East', ageOfBuilding: 0,
     furnishing: FurnishingStatus.SEMI, parking: true, liftAvailable: true, 
     powerBackup: true, petsAllowed: false, bachelorsAllowed: true, 
-    negotiable: true, availabilityDate: new Date().toISOString().split('T')[0]
+    negotiable: true, availabilityDate: new Date().toISOString().split('T')[0],
+    listingSource: ListingSource.DIRECT, brokerName: '', brokerNumber: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -212,8 +237,7 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
       photos: [`https://picsum.photos/seed/${Date.now()}/800/600`],
       createdAt: new Date().toISOString(),
       status: PropertyStatus.AVAILABLE,
-      isFavorite: false,
-      listingSource: ListingSource.DIRECT
+      isFavorite: false
     });
     onClose();
   };
@@ -230,6 +254,39 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
         </div>
         
         <form onSubmit={handleSubmit} className="p-10 overflow-y-auto space-y-10 custom-scrollbar">
+          {/* Section: Source Selection */}
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Listing Source</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                type="button"
+                onClick={() => setFormData({...formData, listingSource: ListingSource.DIRECT})}
+                className={`p-5 rounded-[1.5rem] border text-xs font-black uppercase tracking-widest transition-all ${formData.listingSource === ListingSource.DIRECT ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-white'}`}
+              >
+                Direct Property
+              </button>
+              <button 
+                type="button"
+                onClick={() => setFormData({...formData, listingSource: ListingSource.BROKER})}
+                className={`p-5 rounded-[1.5rem] border text-xs font-black uppercase tracking-widest transition-all ${formData.listingSource === ListingSource.BROKER ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-white'}`}
+              >
+                Via Broker
+              </button>
+            </div>
+            {formData.listingSource === ListingSource.BROKER && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Broker Full Name</label>
+                  <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Enter broker name" onChange={e => setFormData({...formData, brokerName: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Broker Phone Number</label>
+                  <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="+91 00000 00000" onChange={e => setFormData({...formData, brokerNumber: e.target.value})} />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Section 1: Identity */}
           <div className="space-y-6">
             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Basic Information</h4>
