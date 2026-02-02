@@ -3,25 +3,27 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, MapPin, X, Home, Bed, Maximize2, Building, Layers, Compass, 
   Car, Power, Dog, Users as UsersIcon, ChevronRight, Star, Trash2, ShieldCheck, 
-  CheckCircle2, Info, Wind, Clock, UserCheck, Phone
+  CheckCircle2, Info, Wind, Clock, UserCheck, Phone, Edit2
 } from 'lucide-react';
 import { Property, PropertyStatus, TransactionType, PropertyType, FurnishingStatus, ListingSource } from '../types';
 
 interface PropertiesPageProps {
   properties: Property[];
   onAdd: (prop: Property) => void;
+  onUpdate: (prop: Property) => void;
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   triggerModal?: number;
 }
 
-export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAdd, onDelete, onToggleFavorite, triggerModal }) => {
-  const [showAddModal, setShowAddModal] = useState(false);
+export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAdd, onUpdate, onDelete, onToggleFavorite, triggerModal }) => {
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (triggerModal && triggerModal > 0) setShowAddModal(true);
+    if (triggerModal && triggerModal > 0) setShowFormModal(true);
   }, [triggerModal]);
 
   const filtered = properties.filter(p => 
@@ -29,6 +31,17 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
     p.location.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.buildingName.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleEditClick = (e: React.MouseEvent, prop: Property) => {
+    e.stopPropagation();
+    setEditingProperty(prop);
+    setShowFormModal(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingProperty(null);
+    setShowFormModal(true);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
@@ -38,7 +51,7 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
           <p className="text-slate-500 text-sm font-medium">Your comprehensive property database.</p>
         </div>
         <button 
-          onClick={() => setShowAddModal(true)}
+          onClick={handleAddNew}
           className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition-all"
         >
           <Plus size={20} /> Add Detailed Listing
@@ -82,9 +95,14 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
             <div className="p-8 space-y-5">
               <div className="flex justify-between items-start gap-4">
                 <h3 className="font-black text-black text-xl tracking-tight line-clamp-1 group-hover:text-indigo-600 transition-colors cursor-pointer" onClick={() => setSelectedProperty(prop)}>{prop.title}</h3>
-                <button onClick={() => onDelete(prop.id)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button onClick={(e) => handleEditClick(e, prop)} className="p-2 text-slate-300 hover:text-indigo-600 transition-colors">
+                    <Edit2 size={16} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onDelete(prop.id); }} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
               
               <div className="flex items-center gap-2 text-black text-sm font-black">
@@ -109,7 +127,17 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
         ))}
       </div>
 
-      {showAddModal && <AddPropertyModal onClose={() => setShowAddModal(false)} onAdd={onAdd} />}
+      {showFormModal && (
+        <PropertyFormModal 
+          onClose={() => { setShowFormModal(false); setEditingProperty(null); }} 
+          onSave={(p) => { 
+            editingProperty ? onUpdate(p) : onAdd(p); 
+            setShowFormModal(false); 
+            setEditingProperty(null); 
+          }} 
+          initialData={editingProperty}
+        />
+      )}
       {selectedProperty && <PropertyDetailModal property={selectedProperty} onClose={() => setSelectedProperty(null)} />}
     </div>
   );
@@ -217,8 +245,8 @@ const FeatureBadge = ({ label, active, icon }: { label: string, active: boolean,
   </div>
 );
 
-const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => void }> = ({ onClose, onAdd }) => {
-  const [formData, setFormData] = useState<Partial<Property>>({
+const PropertyFormModal: React.FC<{ onClose: () => void; onSave: (p: Property) => void; initialData?: Property | null }> = ({ onClose, onSave, initialData }) => {
+  const [formData, setFormData] = useState<Partial<Property>>(initialData || {
     title: '', description: '', price: 0, carpetArea: 0, builtUpArea: 0, bhk: '2BHK',
     location: { area: '', city: 'Mumbai', address: '' },
     transactionType: TransactionType.RENT, type: PropertyType.FLAT,
@@ -231,15 +259,14 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd({
+    onSave({
       ...(formData as Property),
-      id: `p-${Date.now()}`,
-      photos: [`https://picsum.photos/seed/${Date.now()}/800/600`],
-      createdAt: new Date().toISOString(),
-      status: PropertyStatus.AVAILABLE,
-      isFavorite: false
+      id: formData.id || `p-${Date.now()}`,
+      photos: formData.photos || [`https://picsum.photos/seed/${Date.now()}/800/600`],
+      createdAt: formData.createdAt || new Date().toISOString(),
+      status: formData.status || PropertyStatus.AVAILABLE,
+      isFavorite: formData.isFavorite || false
     });
-    onClose();
   };
 
   return (
@@ -247,8 +274,8 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
       <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
           <div>
-            <h2 className="text-2xl font-black text-slate-900">Add Detailed Listing</h2>
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Complete Inventory Form</p>
+            <h2 className="text-2xl font-black text-slate-900">{initialData ? 'Update Listing' : 'Add Detailed Listing'}</h2>
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{initialData ? 'Modify Inventory Record' : 'Complete Inventory Form'}</p>
           </div>
           <button onClick={onClose} className="p-4 hover:bg-slate-100 rounded-2xl text-slate-400 transition-all"><X size={24}/></button>
         </div>
@@ -277,11 +304,11 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Broker Full Name</label>
-                  <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Enter broker name" onChange={e => setFormData({...formData, brokerName: e.target.value})} />
+                  <input required value={formData.brokerName || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Enter broker name" onChange={e => setFormData({...formData, brokerName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Broker Phone Number</label>
-                  <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="+91 00000 00000" onChange={e => setFormData({...formData, brokerNumber: e.target.value})} />
+                  <input required value={formData.brokerNumber || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="+91 00000 00000" onChange={e => setFormData({...formData, brokerNumber: e.target.value})} />
                 </div>
               </div>
             )}
@@ -293,16 +320,16 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Listing Title</label>
-                <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="e.g. Sea View 3BHK Penthouse" onChange={e => setFormData({...formData, title: e.target.value})} />
+                <input required value={formData.title || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="e.g. Sea View 3BHK Penthouse" onChange={e => setFormData({...formData, title: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Building Name</label>
-                <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="e.g. Sky Heights" onChange={e => setFormData({...formData, buildingName: e.target.value})} />
+                <input required value={formData.buildingName || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="e.g. Sky Heights" onChange={e => setFormData({...formData, buildingName: e.target.value})} />
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Description</label>
-              <textarea required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[100px]" placeholder="Highlight features, proximity, and condition..." onChange={e => setFormData({...formData, description: e.target.value})} />
+              <textarea required value={formData.description || ''} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[100px]" placeholder="Highlight features, proximity, and condition..." onChange={e => setFormData({...formData, description: e.target.value})} />
             </div>
           </div>
 
@@ -312,21 +339,21 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Price (₹)</label>
-                 <input required type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
+                 <input required type="number" value={formData.price || 0} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
                </div>
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Carpet Area</label>
-                 <input required type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="sqft" onChange={e => setFormData({...formData, carpetArea: Number(e.target.value)})} />
+                 <input required type="number" value={formData.carpetArea || 0} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="sqft" onChange={e => setFormData({...formData, carpetArea: Number(e.target.value)})} />
                </div>
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">BHK</label>
-                 <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, bhk: e.target.value})}>
+                 <select value={formData.bhk || '2BHK'} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, bhk: e.target.value})}>
                     <option value="1BHK">1BHK</option><option value="2BHK">2BHK</option><option value="3BHK">3BHK</option><option value="4BHK">4BHK</option><option value="5BHK">5BHK+</option>
                  </select>
                </div>
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Transaction</label>
-                 <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, transactionType: e.target.value as any})}>
+                 <select value={formData.transactionType || TransactionType.RENT} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, transactionType: e.target.value as any})}>
                     <option value={TransactionType.RENT}>Rent</option><option value={TransactionType.SALE}>Sale</option>
                  </select>
                </div>
@@ -335,37 +362,28 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Floor No.</label>
-                 <input type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, floorNumber: Number(e.target.value)})} />
+                 <input type="number" value={formData.floorNumber || 0} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, floorNumber: Number(e.target.value)})} />
                </div>
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Total Floors</label>
-                 <input type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, totalFloors: Number(e.target.value)})} />
+                 <input type="number" value={formData.totalFloors || 10} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, totalFloors: Number(e.target.value)})} />
                </div>
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Facing</label>
-                 <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, facing: e.target.value as any})}>
+                 <select value={formData.facing || 'East'} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, facing: e.target.value as any})}>
                     <option value="East">East</option><option value="West">West</option><option value="North">North</option><option value="South">South</option>
                  </select>
                </div>
                <div className="space-y-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Building Age</label>
-                 <input type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Years" onChange={e => setFormData({...formData, ageOfBuilding: Number(e.target.value)})} />
+                 <input type="number" value={formData.ageOfBuilding || 0} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Years" onChange={e => setFormData({...formData, ageOfBuilding: Number(e.target.value)})} />
                </div>
             </div>
           </div>
 
-          {/* Section 3: Amenities Checkboxes */}
-          <div className="space-y-6">
-             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Amenities & Permissions</h4>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <ToggleItem label="Parking" active={!!formData.parking} onClick={() => setFormData({...formData, parking: !formData.parking})} />
-                <ToggleItem label="Elevator" active={!!formData.liftAvailable} onClick={() => setFormData({...formData, liftAvailable: !formData.liftAvailable})} />
-                <ToggleItem label="Backup" active={!!formData.powerBackup} onClick={() => setFormData({...formData, powerBackup: !formData.powerBackup})} />
-                <ToggleItem label="Pets" active={!!formData.petsAllowed} onClick={() => setFormData({...formData, petsAllowed: !formData.petsAllowed})} />
-             </div>
-          </div>
-
-          <button type="submit" className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs shadow-2xl hover:bg-indigo-700 transition-all">Submit Property to Cloud</button>
+          <button type="submit" className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs shadow-2xl hover:bg-indigo-700 transition-all">
+            {initialData ? 'Update Record' : 'Submit Property to Cloud'}
+          </button>
         </form>
       </div>
     </div>
