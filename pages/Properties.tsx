@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, MapPin, X, Home, Bed, Maximize2, Building, Layers, Compass, 
-  Car, Power, Dog, Users as UsersIcon, ChevronRight, Star, Trash2
+  Car, Power, Dog, Users as UsersIcon, ChevronRight, Star, Trash2, ShieldCheck, 
+  CheckCircle2, Info, Wind, Clock
 } from 'lucide-react';
 import { Property, PropertyStatus, TransactionType, PropertyType, FurnishingStatus, ListingSource } from '../types';
 
@@ -25,7 +26,8 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
 
   const filtered = properties.filter(p => 
     p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.location.area.toLowerCase().includes(searchQuery.toLowerCase())
+    p.location.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.buildingName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -33,13 +35,13 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Listing Inventory</h1>
-          <p className="text-slate-500 text-sm font-medium">Your private property database.</p>
+          <p className="text-slate-500 text-sm font-medium">Your comprehensive property database.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-3 px-8 py-4 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition-all"
         >
-          <Plus size={20} /> Add Listing
+          <Plus size={20} /> Add Detailed Listing
         </button>
       </div>
 
@@ -48,7 +50,7 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="Search by area or title..." 
+            placeholder="Search by area, building, or title..." 
             className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black focus:bg-white focus:outline-none transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -59,25 +61,48 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filtered.map((prop) => (
           <div key={prop.id} className="bg-white rounded-[3rem] overflow-hidden border border-slate-200 shadow-sm group hover:shadow-2xl transition-all relative transform hover:-translate-y-1">
-            <div className="h-64 bg-slate-100 relative overflow-hidden" onClick={() => setSelectedProperty(prop)}>
+            <div className="h-64 bg-slate-100 relative overflow-hidden cursor-pointer" onClick={() => setSelectedProperty(prop)}>
               <img src={prop.photos[0]} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" alt="" />
-              <div className="absolute top-6 left-6">
+              <div className="absolute top-6 left-6 flex gap-2">
                 <span className="px-4 py-2 bg-white/90 backdrop-blur-md rounded-xl text-[9px] font-black text-indigo-600 uppercase tracking-widest shadow-lg">
                   {prop.transactionType}
                 </span>
+                <span className="px-4 py-2 bg-slate-900/90 backdrop-blur-md rounded-xl text-[9px] font-black text-white uppercase tracking-widest shadow-lg">
+                  {prop.bhk}
+                </span>
               </div>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onToggleFavorite(prop.id); }}
+                className={`absolute top-6 right-6 p-3 rounded-xl backdrop-blur-md transition-all ${prop.isFavorite ? 'bg-amber-400 text-white shadow-amber-200' : 'bg-white/50 text-white hover:bg-white hover:text-amber-400'}`}
+              >
+                <Star size={18} fill={prop.isFavorite ? "currentColor" : "none"} />
+              </button>
             </div>
             
             <div className="p-8 space-y-5">
-              <h3 className="font-black text-black text-xl tracking-tight line-clamp-1 group-hover:text-indigo-600 transition-colors cursor-pointer" onClick={() => setSelectedProperty(prop)}>{prop.title}</h3>
+              <div className="flex justify-between items-start gap-4">
+                <h3 className="font-black text-black text-xl tracking-tight line-clamp-1 group-hover:text-indigo-600 transition-colors cursor-pointer" onClick={() => setSelectedProperty(prop)}>{prop.title}</h3>
+                <button onClick={() => onDelete(prop.id)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
+                  <Trash2 size={16} />
+                </button>
+              </div>
               
               <div className="flex items-center gap-2 text-black text-sm font-black">
                 <MapPin size={16} className="text-indigo-600" /> {prop.location.area}, {prop.location.city}
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <Maximize2 size={14} /> {prop.carpetArea} sqft
+                 </div>
+                 <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <Layers size={14} /> Floor {prop.floorNumber}/{prop.totalFloors}
+                 </div>
+              </div>
+
               <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                 <span className="text-2xl font-black text-black tracking-tight">₹{prop.price.toLocaleString()}</span>
-                <span className="text-[10px] font-black px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl uppercase">Available</span>
+                <span className="text-[10px] font-black px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl uppercase">{prop.status}</span>
               </div>
             </div>
           </div>
@@ -92,40 +117,91 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({ properties, onAd
 
 const PropertyDetailModal: React.FC<{ property: Property; onClose: () => void }> = ({ property, onClose }) => (
   <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-    <div className="bg-white w-full max-w-4xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col md:flex-row max-h-[90vh]">
-      <div className="w-full md:w-1/2 relative bg-slate-100">
+    <div className="bg-white w-full max-w-5xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col md:flex-row max-h-[95vh]">
+      <div className="w-full md:w-2/5 relative bg-slate-100 overflow-hidden">
         <img src={property.photos[0]} className="w-full h-full object-cover" alt="" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
         <button onClick={onClose} className="absolute top-8 left-8 p-4 bg-white/20 backdrop-blur-xl hover:bg-white text-white hover:text-slate-900 rounded-2xl transition-all shadow-2xl">
           <X size={24} />
         </button>
+        <div className="absolute bottom-10 left-10 right-10 text-white">
+           <h2 className="text-3xl font-black tracking-tight leading-tight">{property.title}</h2>
+           <div className="flex items-center gap-3 mt-4">
+              <span className="px-3 py-1.5 bg-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest">{property.transactionType}</span>
+              <span className="text-xs font-black opacity-80">{property.buildingName}</span>
+           </div>
+        </div>
       </div>
-      <div className="w-full md:w-1/2 p-12 overflow-y-auto space-y-10 bg-white">
-        <div>
-          <h2 className="text-3xl font-black text-black tracking-tight leading-tight">{property.title}</h2>
-          <p className="text-indigo-600 font-black uppercase text-[10px] tracking-widest mt-4">{property.type} • {property.bhk}</p>
-        </div>
-        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-           <p className="text-black font-bold leading-relaxed">{property.description}</p>
-        </div>
-        <div className="grid grid-cols-2 gap-6">
-          <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 text-center">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Asking Price</p>
-             <p className="text-2xl font-black text-black">₹{property.price.toLocaleString()}</p>
+      
+      <div className="w-full md:w-3/5 p-12 overflow-y-auto space-y-12 bg-white">
+        <section>
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Description</h4>
+          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 shadow-inner">
+             <p className="text-black font-bold leading-relaxed text-sm">{property.description}</p>
           </div>
-          <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 text-center">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Carpet Area</p>
-             <p className="text-2xl font-black text-black">{property.carpetArea} sqft</p>
+        </section>
+
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <DetailBlock label="Price" value={`₹${property.price.toLocaleString()}`} />
+          <DetailBlock label="BHK" value={property.bhk} />
+          <DetailBlock label="Carpet Area" value={`${property.carpetArea} sqft`} />
+          <DetailBlock label="Facing" value={property.facing} />
+          <DetailBlock label="Floor" value={`${property.floorNumber} / ${property.totalFloors}`} />
+          <DetailBlock label="Age" value={`${property.ageOfBuilding} Yrs`} />
+          <DetailBlock label="Furnishing" value={property.furnishing} />
+          <DetailBlock label="Status" value={property.status} />
+        </section>
+
+        <section>
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Amenities & Features</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <FeatureBadge label="Parking" active={property.parking} icon={<Car size={16}/>} />
+            <FeatureBadge label="Elevator" active={property.liftAvailable} icon={<Layers size={16}/>} />
+            <FeatureBadge label="Power Backup" active={property.powerBackup} icon={<Power size={16}/>} />
+            <FeatureBadge label="Pets Allowed" active={property.petsAllowed} icon={<Dog size={16}/>} />
+            <FeatureBadge label="Bachelors" active={property.bachelorsAllowed} icon={<UsersIcon size={16}/>} />
+            <FeatureBadge label="Negotiable" active={property.negotiable} icon={<ShieldCheck size={16}/>} />
           </div>
-        </div>
+        </section>
+
+        <section>
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Location Details</h4>
+          <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+             <div className="flex items-center gap-3 text-black font-black mb-4">
+                <MapPin className="text-indigo-600" /> {property.location.area}, {property.location.city}
+             </div>
+             <p className="text-sm text-slate-600 font-medium pl-9">{property.location.address}</p>
+          </div>
+        </section>
       </div>
     </div>
   </div>
 );
 
+const DetailBlock = ({ label, value }: { label: string, value: string }) => (
+  <div className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm text-center">
+    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+    <p className="text-sm font-black text-black">{value}</p>
+  </div>
+);
+
+const FeatureBadge = ({ label, active, icon }: { label: string, active: boolean, icon: React.ReactNode }) => (
+  <div className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${active ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-300 opacity-60'}`}>
+    {icon}
+    <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+    {active && <CheckCircle2 size={12} className="ml-auto" />}
+  </div>
+);
+
 const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => void }> = ({ onClose, onAdd }) => {
   const [formData, setFormData] = useState<Partial<Property>>({
-    title: '', description: '', price: 0, carpetArea: 0, location: { area: '', city: 'Mumbai', address: '' },
-    transactionType: TransactionType.RENT, type: PropertyType.FLAT, bhk: '2BHK'
+    title: '', description: '', price: 0, carpetArea: 0, builtUpArea: 0, bhk: '2BHK',
+    location: { area: '', city: 'Mumbai', address: '' },
+    transactionType: TransactionType.RENT, type: PropertyType.FLAT,
+    floorNumber: 0, totalFloors: 10, buildingName: '', facing: 'East', ageOfBuilding: 0,
+    furnishing: FurnishingStatus.SEMI, parking: true, liftAvailable: true, 
+    powerBackup: true, petsAllowed: false, bachelorsAllowed: true, 
+    negotiable: true, availabilityDate: new Date().toISOString().split('T')[0]
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -144,21 +220,107 @@ const AddPropertyModal: React.FC<{ onClose: () => void; onAdd: (p: Property) => 
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden">
-        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-2xl font-black text-slate-900">New Listing</h2>
-          <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-xl text-slate-400"><X size={24}/></button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-10 space-y-6">
-          <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Listing Title" onChange={e => setFormData({...formData, title: e.target.value})} />
-          <textarea required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[120px]" placeholder="Full Description..." onChange={e => setFormData({...formData, description: e.target.value})} />
-          <div className="grid grid-cols-2 gap-4">
-             <input required type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Price (₹)" onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
-             <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Area Name" onChange={e => setFormData({...formData, location: {...formData.location!, area: e.target.value}})} />
+      <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900">Add Detailed Listing</h2>
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Complete Inventory Form</p>
           </div>
-          <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-xs shadow-2xl">Publish Listing</button>
+          <button onClick={onClose} className="p-4 hover:bg-slate-100 rounded-2xl text-slate-400 transition-all"><X size={24}/></button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-10 overflow-y-auto space-y-10 custom-scrollbar">
+          {/* Section 1: Identity */}
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Basic Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Listing Title</label>
+                <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="e.g. Sea View 3BHK Penthouse" onChange={e => setFormData({...formData, title: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Building Name</label>
+                <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="e.g. Sky Heights" onChange={e => setFormData({...formData, buildingName: e.target.value})} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Description</label>
+              <textarea required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black min-h-[100px]" placeholder="Highlight features, proximity, and condition..." onChange={e => setFormData({...formData, description: e.target.value})} />
+            </div>
+          </div>
+
+          {/* Section 2: Specs */}
+          <div className="space-y-6">
+            <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Specifications & Pricing</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Price (₹)</label>
+                 <input required type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Carpet Area</label>
+                 <input required type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="sqft" onChange={e => setFormData({...formData, carpetArea: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">BHK</label>
+                 <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, bhk: e.target.value})}>
+                    <option value="1BHK">1BHK</option><option value="2BHK">2BHK</option><option value="3BHK">3BHK</option><option value="4BHK">4BHK</option><option value="5BHK">5BHK+</option>
+                 </select>
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Transaction</label>
+                 <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, transactionType: e.target.value as any})}>
+                    <option value={TransactionType.RENT}>Rent</option><option value={TransactionType.SALE}>Sale</option>
+                 </select>
+               </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Floor No.</label>
+                 <input type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, floorNumber: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Total Floors</label>
+                 <input type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" onChange={e => setFormData({...formData, totalFloors: Number(e.target.value)})} />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Facing</label>
+                 <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black appearance-none" onChange={e => setFormData({...formData, facing: e.target.value as any})}>
+                    <option value="East">East</option><option value="West">West</option><option value="North">North</option><option value="South">South</option>
+                 </select>
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase ml-2">Building Age</label>
+                 <input type="number" className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-black" placeholder="Years" onChange={e => setFormData({...formData, ageOfBuilding: Number(e.target.value)})} />
+               </div>
+            </div>
+          </div>
+
+          {/* Section 3: Amenities Checkboxes */}
+          <div className="space-y-6">
+             <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Amenities & Permissions</h4>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <ToggleItem label="Parking" active={!!formData.parking} onClick={() => setFormData({...formData, parking: !formData.parking})} />
+                <ToggleItem label="Elevator" active={!!formData.liftAvailable} onClick={() => setFormData({...formData, liftAvailable: !formData.liftAvailable})} />
+                <ToggleItem label="Backup" active={!!formData.powerBackup} onClick={() => setFormData({...formData, powerBackup: !formData.powerBackup})} />
+                <ToggleItem label="Pets" active={!!formData.petsAllowed} onClick={() => setFormData({...formData, petsAllowed: !formData.petsAllowed})} />
+             </div>
+          </div>
+
+          <button type="submit" className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase text-xs shadow-2xl hover:bg-indigo-700 transition-all">Submit Property to Cloud</button>
         </form>
       </div>
     </div>
   );
 };
+
+const ToggleItem = ({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) => (
+  <button 
+    type="button"
+    onClick={onClick}
+    className={`p-4 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all text-center ${active ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-100'}`}
+  >
+    {label}
+  </button>
+);
