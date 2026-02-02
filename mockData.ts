@@ -88,6 +88,8 @@ export const MOCK_CLIENTS: Client[] = [
     budgetMax: 50000,
     moveInDate: '2023-12-15',
     leadStage: LeadStage.SITE_VISIT,
+    // Fix: Added missing listingSource
+    listingSource: ListingSource.DIRECT,
     tags: ['High Priority', 'Family'],
     // Fix: Added isFavorite
     isFavorite: true,
@@ -111,6 +113,9 @@ export const MOCK_CLIENTS: Client[] = [
     budgetMax: 150000000,
     moveInDate: '2024-02-01',
     leadStage: LeadStage.NEGOTIATION,
+    // Fix: Added missing listingSource
+    listingSource: ListingSource.BROKER,
+    brokerName: 'Wealth Partners',
     tags: ['Investor', 'Luxury'],
     // Fix: Added isFavorite
     isFavorite: false,
